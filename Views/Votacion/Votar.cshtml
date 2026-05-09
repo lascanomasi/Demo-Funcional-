@@ -1,0 +1,54 @@
+@model VotaYa.Models.Pregunta?
+@{
+    ViewData["Title"] = "Votar";
+}
+
+<div class="container mt-5 text-center">
+    @if (Model == null)
+    {
+        <div class="mt-5">
+            <h3>⏳ Esperando pregunta...</h3>
+            <p class="text-muted">El administrador todavía no activó ninguna pregunta.</p>
+            <script>
+                // Refresca la página cada 3 segundos hasta que haya una pregunta activa
+                setTimeout(() => location.reload(), 3000);
+            </script>
+        </div>
+    }
+    else
+    {
+        <h2 class="mb-4">@Model.Texto</h2>
+        <div id="opciones" class="d-grid gap-3" style="max-width:480px; margin: 0 auto;">
+            @foreach (var op in Model.Opciones)
+            {
+                <button class="btn btn-outline-primary btn-lg opcion-btn"
+                        data-id="@op.Id"
+                        onclick="votar(@op.Id, this)">
+                    @op.Texto
+                </button>
+            }
+        </div>
+        <p id="mensaje" class="mt-4 text-success fw-bold" style="display:none">✅ ¡Voto registrado!</p>
+    }
+</div>
+
+<script>
+    let yaVote = false;
+
+    async function votar(opcionId, btn) {
+        if (yaVote) return;
+        yaVote = true;
+
+        // Deshabilitar todos los botones
+        document.querySelectorAll('.opcion-btn').forEach(b => b.disabled = true);
+        btn.classList.replace('btn-outline-primary', 'btn-primary');
+
+        await fetch('/Votacion/RegistrarVoto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `opcionId=${opcionId}`
+        });
+
+        document.getElementById('mensaje').style.display = 'block';
+    }
+</script>

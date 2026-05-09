@@ -1,0 +1,68 @@
+@model VotaYa.Models.Pregunta?
+@{
+    ViewData["Title"] = "Resultados en vivo";
+}
+
+<div class="container mt-4 text-center">
+    @if (Model == null)
+    {
+        <h3 class="mt-5">⏳ Sin pregunta activa</h3>
+    }
+    else
+    {
+        <h2 class="mb-4">📊 @Model.Texto</h2>
+
+        <div style="max-width: 600px; margin: 0 auto;">
+            @foreach (var op in Model.Opciones)
+            {
+                <div class="mb-3 text-start">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="fw-bold">@op.Texto</span>
+                        <span id="count-@op.Id">@op.Votos votos</span>
+                    </div>
+                    <div class="progress" style="height: 36px;">
+                        <div id="bar-@op.Id"
+                             class="progress-bar progress-bar-striped progress-bar-animated"
+                             style="width: @(op.Votos > 0 ? "10" : "0")%">
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <p class="text-muted mt-3">Total: <strong id="total">@Model.Opciones.Sum(o => o.Votos)</strong> votos</p>
+    }
+</div>
+
+@* SignalR client *@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+<script>
+    const votos = {
+        @foreach (var op in Model?.Opciones ?? new List<VotaYa.Models.Opcion>())
+        {
+            @:@op.Id: @op.Votos,
+        }
+    };
+
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/votohub")
+        .build();
+
+    // Cuando llega un voto nuevo desde SignalR, actualizar las barras
+    connection.on("ResultadoActualizado", (opcionId, totalOpcion) => {
+        votos[opcionId] = totalOpcion;
+
+        const total = Object.values(votos).reduce((a, b) => a + b, 0);
+        document.getElementById("total").textContent = total;
+
+        for (const [id, cant] of Object.entries(votos)) {
+            const pct = total > 0 ? Math.round((cant / total) * 100) : 0;
+            const bar = document.getElementById(`bar-${id}`);
+            const count = document.getElementById(`count-${id}`);
+            if (bar) bar.style.width = pct + "%";
+            if (count) count.textContent = cant + " votos";
+        }
+    });
+
+    connection.start().catch(err => console.error(err));
+</script>
