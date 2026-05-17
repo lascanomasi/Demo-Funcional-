@@ -91,5 +91,22 @@ namespace VotaYa.Controllers
                 .FirstOrDefaultAsync(p => p.Activa);
             return View(pregunta);
         }
-    }
-}
+        // ... método Resultados() ...
+
+        [HttpPost]
+        public async Task<IActionResult> Eliminar(int id)
+        {
+            var pregunta = await _db.Preguntas.Include(p => p.Opciones)
+                                               .FirstOrDefaultAsync(p => p.Id == id);
+            if (pregunta != null)
+            {
+                _db.Opciones.RemoveRange(pregunta.Opciones);
+                _db.Preguntas.Remove(pregunta);
+                await _db.SaveChangesAsync();
+            }
+            return RedirectToAction("Admin");
+        }
+
+    }  // ← este } cierra la clase VotacionController
+}      // ← este } cierra el namespace
+

@@ -27,8 +27,7 @@ app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
+    pattern: "{controller=Votacion}/{action=Admin}/{id?}");
 // Ruta del Hub de SignalR
 app.MapHub<VotoHub>("/votohub");
 
